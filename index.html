@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#030308">
+  <title>CYBER BULLET HELL - スマホ弾幕シューティング</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app-container">
+    <div id="game-wrapper">
+      <canvas id="gameCanvas" width="480" height="720"></canvas>
+
+      <!-- サウンド切替ボタン -->
+      <button id="btn-sound-toggle" aria-label="サウンド切替" title="Sound Mute/Unmute">🔊</button>
+
+      <!-- ゲームプレイ中 HUD -->
+      <div id="hud-overlay" class="ui-layer">
+        <div class="hud-top">
+          <div class="hud-stat-group">
+            <span class="hud-label">SCORE</span>
+            <span id="hud-score" class="hud-value">00000000</span>
+          </div>
+          <div class="hud-stat-group" style="text-align: right;">
+            <span class="hud-label">HISCORE</span>
+            <span id="hud-hiscore" class="hud-value">00100000</span>
+          </div>
+        </div>
+
+        <!-- ボスHPバー -->
+        <div id="boss-hud">
+          <div id="boss-name">CHRONO WEAVER - PHASE 1</div>
+          <div class="boss-bar-outer">
+            <div id="boss-bar-inner"></div>
+          </div>
+        </div>
+
+        <div class="hud-top" style="margin-top: auto; padding-bottom: 90px;">
+          <div class="hud-stat-group">
+            <span class="hud-label">LIFE / BOMB</span>
+            <div class="hud-meters">
+              <span id="hud-lives" class="meter-icons">❤️ ❤️ ❤️</span>
+              <span id="hud-bombs" class="meter-icons">💣 💣 💣</span>
+            </div>
+          </div>
+          <div class="hud-stat-group" style="text-align: right;">
+            <span class="hud-label">GRAZE / POWER</span>
+            <div class="hud-value" style="font-size: 15px;">
+              <span id="hud-graze" style="color: #a855f7;">0</span>
+              <span style="color: #64748b;"> | </span>
+              <span id="hud-power" style="color: #f59e0b;">1.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- スマホタッチ操作用ボタン -->
+      <div id="touch-controls">
+        <button id="btn-slow" class="touch-btn" aria-label="低速移動">SLOW</button>
+        <button id="btn-bomb" class="touch-btn" aria-label="ボム発動">
+          BOMB
+          <span id="touch-bomb-count" class="btn-bomb-count">x3</span>
+        </button>
+      </div>
+
+      <div id="drag-hint">👆 画面スワイプで自機を自由操作</div>
+
+      <!-- タイトル画面 -->
+      <div id="title-screen" class="screen-panel">
+        <h1 class="game-title">CYBER BULLET<br>HELL</h1>
+        <div class="game-subtitle">NEO TOKYO SKYLINE 2088</div>
+        <button id="btn-start" class="menu-btn">GAME START</button>
+        <div class="how-to-play">
+          <h4>【操作方法】</h4>
+          <div>📱 <strong>スマホ</strong>: 画面ドラッグで自機移動（指の動きに追従）。自動ショット。右下「BOMB」でボム発動、左下「SLOW」で精密低速移動。</div>
+          <div style="margin-top: 6px;">💻 <strong>PC</strong>: [矢印 / WASD] 移動、[Shift] 低速モード、[X / スペース] ボム、[Z] ショット。マウスドラッグでも移動可能。</div>
+          <div style="margin-top: 6px;">✨ 赤いコアが自機の当たり判定です。弾の掠り(グレイズ)でスコア倍率アップ！</div>
+        </div>
+      </div>
+
+      <!-- ポーズ画面 -->
+      <div id="pause-screen" class="screen-panel hidden">
+        <h2 class="game-title" style="font-size: 26px;">PAUSED</h2>
+        <button id="btn-resume" class="menu-btn">RESUME</button>
+        <button id="btn-restart-pause" class="menu-btn" style="background: rgba(239, 68, 68, 0.25); border-color: #ef4444;">RESTART</button>
+      </div>
+
+      <!-- ゲームオーバー画面 -->
+      <div id="gameover-screen" class="screen-panel hidden">
+        <h2 class="game-title" style="color: #ef4444; text-shadow: 0 0 25px #ef4444;">GAME OVER</h2>
+        <div class="result-score-box">
+          <div class="result-row">
+            <span>FINAL SCORE</span>
+            <span id="go-score" style="color: #38bdf8; font-weight: bold;">0</span>
+          </div>
+          <div class="result-row">
+            <span>GRAZE COUNT</span>
+            <span id="go-graze" style="color: #a855f7; font-weight: bold;">0</span>
+          </div>
+          <div class="result-row main">
+            <span>HI-SCORE</span>
+            <span id="go-hiscore">0</span>
+          </div>
+        </div>
+        <button id="btn-retry" class="menu-btn">TRY AGAIN</button>
+        <button id="btn-title-go" class="menu-btn" style="font-size: 13px; padding: 10px;">TITLE MENU</button>
+      </div>
+
+      <!-- ステージクリア画面 -->
+      <div id="clear-screen" class="screen-panel hidden">
+        <h2 class="game-title" style="color: #34d399; text-shadow: 0 0 25px #10b981;">ALL STAGE CLEAR!</h2>
+        <div class="game-subtitle" style="color: #6ee7b7;">MISSION ACCOMPLISHED</div>
+        <div class="result-score-box">
+          <div class="result-row">
+            <span>SCORE</span>
+            <span id="clear-score" style="color: #38bdf8; font-weight: bold;">0</span>
+          </div>
+          <div class="result-row">
+            <span>GRAZE BONUS</span>
+            <span id="clear-graze-bonus" style="color: #a855f7; font-weight: bold;">+0</span>
+          </div>
+          <div class="result-row">
+            <span>LIFE/BOMB BONUS</span>
+            <span id="clear-survival-bonus" style="color: #f59e0b; font-weight: bold;">+0</span>
+          </div>
+          <div class="result-row main">
+            <span>TOTAL SCORE</span>
+            <span id="clear-total-score">0</span>
+          </div>
+        </div>
+        <button id="btn-clear-retry" class="menu-btn">PLAY AGAIN</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
